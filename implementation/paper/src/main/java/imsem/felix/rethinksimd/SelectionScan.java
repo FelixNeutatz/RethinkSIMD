@@ -81,9 +81,9 @@ public class SelectionScan {
 		
 		for (int w = 0; w < k.length; w++) {
 			m.set(w); //true
-			for (int c = 0; c < k[0].length; c++) {
+			for (int c = 0; c < kLower.length; c++) {
 				if ((k[w][c] < kLower[c]) || (k[w][c] > kUpper[c])) {
-					m.flip(w); //false
+					m.flip(w);
 					break;
 				}
 			}
@@ -92,59 +92,67 @@ public class SelectionScan {
 	}
 	
 	private static <T> HashMap<Integer,T> put (int [] indices, T [] from, HashMap<Integer,T> to) {
-		for (int i = 0; i < indices.length; i++) {
+		return put (indices, from, to, indices.length);
+	}
+
+	private static <T> HashMap<Integer,T> put (int [] indices, T [] from, HashMap<Integer,T> to, int len) {
+		for (int i = 0; i < len; i++) {
 			to.put(indices[i], from[indices[i]]);
 		}
 		return to;
 	}
 	
-	public static Row[] selectionScanVector(int W, double [][] tKeysIn, double [] kLower, double [] kUpper, Row [] tPayloadsIn) {
-		IntBuffer B = IntBuffer.allocate(W);
+	public static Row[] selectionScanVector(int bufferSize, int W, double [][] tKeysIn, double [] kLower, double [] kUpper, Row [] tPayloadsIn) {
+		IntBuffer B = IntBuffer.allocate(bufferSize);
 		int [] p = new int [W];
+		int [] r_new = new int [W];
 		HashMap<Integer,Row> tPayloadsOut = new HashMap<Integer,Row>();
 		
 		int i, j, l; //input, output, and buffer indexes
 		i = j = l = 0;
 		
-		int [] r = new int [W]; //input indexes in vector
+		int [] r = new int [tPayloadsIn.length]; //input indexes in vector
 		int ri = 0;
 		
-		for (int t = 0; t < W; t++) { // of vector lanes
+		for (int t = 0; t < tPayloadsIn.length; t++) { // of vector lanes
 			r[t] = t;
 		}
-		IntBuffer rBuffer = IntBuffer.allocate(W);
+		IntBuffer rBuffer = IntBuffer.allocate(tPayloadsIn.length);
 		rBuffer.put(r);
+		rBuffer.position(0);
 
+		B.position(0);
 		for (i = 0; i < tKeysIn.length; i += W) {
 			double [][] k = loadVectorsOfKeyColumns(W, i, tKeysIn); //load vectors of key columns
 			BitSet m = checkConditionForAllKeys(k, kLower, kUpper); //predicates to mask
 
 			if (m.cardinality() > 0) { //if (m = false) //optional branch
-				System.out.println(m.cardinality());
-				B.put(FundamentalOperations.selectiveStore(r, m), l, m.cardinality()); //selectively store indexes
-				//System.out.println(Arrays.toString(B.array()));
+				rBuffer.get(r_new);
+				B.put(FundamentalOperations.selectiveStore(r_new, m)); //selectively store indexes
+				
 				l = l + m.cardinality(); //update buffer index
 				
-				System.out.println("l: " + l);
-				System.out.println("B limit: " + B.limit());
-				if (l > B.limit() - W) { //flush buffer
-					for (int b = 0; b <= B.limit() - W; b += W) {
-						System.out.println("hallo2");
-						//System.out.println(Arrays.toString(B.array()));
-						B.position(0);
-						B.get(p, b, W); //load input indexes
-						System.out.println(Arrays.toString(p));
-						tPayloadsOut = put(p,tPayloadsIn, tPayloadsOut); //... streaming stores
-						System.out.println(Arrays.toString(tPayloadsOut.values().toArray(new Row [tPayloadsOut.size()])));
+				if (l > bufferSize - W) { //flush buffer
+					B.position(0);
+					for (int b = 0; b < bufferSize - W; b += W) {
+						B.get(p); //load input indexes
+						tPayloadsOut = put(p, tPayloadsIn, tPayloadsOut); //... streaming stores
 					}
-					B.get(p, B.limit() - W, W); //move overflow ...
-					B.put(p, 0, W); //... indexes to start
-					j = j + B.limit() - W; // update output index
-					l = l - B.limit() + W; // update buffer index
+					int p_size = l - B.position();
+					B.get(p, 0, p_size); //move overflow ...
+					
+					B.position(0);
+					B.put(p, 0, p_size); //... indexes to start
+					//j = j + bufferSize - W; // update output index
+					l = bufferSize - W; // update buffer index
 				}
 			}
-			// update index vector
-		} // flush last items after the loop
+		} 
+		
+		// flush last items after the loop
+		int p_size = B.position();
+		tPayloadsOut = put(p, tPayloadsIn, tPayloadsOut, p_size); //... streaming stores
+		
 		return tPayloadsOut.values().toArray(new Row [tPayloadsOut.size()]);
 	}
 }
