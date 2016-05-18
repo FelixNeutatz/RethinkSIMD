@@ -1,14 +1,16 @@
 package imsem.felix.rethinksimd.data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by felix on 17.05.16.
  */
-public class Row {
-	ArrayList<Value> row;
+public class Row implements Serializable{
+	public List<Value> row;
 	
-	public Row (ArrayList<Value> row) {
+	public Row (List<Value> row) {
 		this.row = row;
 	}
 	

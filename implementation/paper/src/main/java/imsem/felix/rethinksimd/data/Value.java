@@ -1,10 +1,13 @@
 package imsem.felix.rethinksimd.data;
 
+import java.io.IOException;
+import java.io.Serializable;
+
 /**
  * Created by felix on 17.05.16.
  */
-public class Value <T>{
-	T value;
+public class Value <T> implements Serializable {
+	public T value;
 	
 	public Value(T value) {
 		this.value = value;

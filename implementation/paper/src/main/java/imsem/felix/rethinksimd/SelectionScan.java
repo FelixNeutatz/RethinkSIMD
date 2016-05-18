@@ -2,6 +2,7 @@ package imsem.felix.rethinksimd;
 
 import imsem.felix.rethinksimd.data.*;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
@@ -101,25 +102,35 @@ public class SelectionScan {
 		}
 		return to;
 	}
+
+	private static ByteBuffer put (int currentIndex, int [] indices, ByteBuffer from, ByteBuffer to) {
+		return put (currentIndex, indices, from, to, indices.length);
+	}
+
+	private static ByteBuffer put (int currentIndex, int [] indices, ByteBuffer from, ByteBuffer to, int len) {
+		int row_byte_size = 387;
+		byte [] row = new byte[row_byte_size]; //TODO: make it dynamically
+		for (int i = 0; i < len; i++) {
+			from.position((currentIndex + indices[i]) * row_byte_size);
+			from.get(row);
+			to.put(row.clone());
+		}
+		return to;
+	}
 	
-	public static Row[] selectionScanVector(int bufferSize, int W, double [][] tKeysIn, double [] kLower, double [] kUpper, Row [] tPayloadsIn) {
+	public static ByteBuffer selectionScanVector(int bufferSize, int W, double [][] tKeysIn, double [] kLower, double [] kUpper, ByteBuffer tPayloadsIn) {
 		IntBuffer B = IntBuffer.allocate(bufferSize);
 		int [] p = new int [W];
-		int [] r_new = new int [W];
-		HashMap<Integer,Row> tPayloadsOut = new HashMap<Integer,Row>();
+		ByteBuffer tPayloadsOut = ByteBuffer.allocate(tPayloadsIn.limit());
+		tPayloadsIn.position(0);
 		
 		int i, j, l; //input, output, and buffer indexes
 		i = j = l = 0;
 		
-		int [] r = new int [tPayloadsIn.length]; //input indexes in vector
-		int ri = 0;
-		
-		for (int t = 0; t < tPayloadsIn.length; t++) { // of vector lanes
+		int [] r = new int [W]; //input indexes in vector
+		for (int t = 0; t < W; t++) { // of vector lanes
 			r[t] = t;
 		}
-		IntBuffer rBuffer = IntBuffer.allocate(tPayloadsIn.length);
-		rBuffer.put(r);
-		rBuffer.position(0);
 
 		B.position(0);
 		for (i = 0; i < tKeysIn.length; i += W) {
@@ -127,8 +138,7 @@ public class SelectionScan {
 			BitSet m = checkConditionForAllKeys(k, kLower, kUpper); //predicates to mask
 
 			if (m.cardinality() > 0) { //if (m = false) //optional branch
-				rBuffer.get(r_new);
-				B.put(FundamentalOperations.selectiveStore(r_new, m)); //selectively store indexes
+				B.put(FundamentalOperations.selectiveStore(r, m)); //selectively store indexes
 				
 				l = l + m.cardinality(); //update buffer index
 				
@@ -136,14 +146,14 @@ public class SelectionScan {
 					B.position(0);
 					for (int b = 0; b < bufferSize - W; b += W) {
 						B.get(p); //load input indexes
-						tPayloadsOut = put(p, tPayloadsIn, tPayloadsOut); //... streaming stores
+						tPayloadsOut = put(j, p, tPayloadsIn, tPayloadsOut); //... streaming stores
+						j = j + W;
 					}
 					int p_size = l - B.position();
 					B.get(p, 0, p_size); //move overflow ...
 					
 					B.position(0);
 					B.put(p, 0, p_size); //... indexes to start
-					//j = j + bufferSize - W; // update output index
 					l = bufferSize - W; // update buffer index
 				}
 			}
@@ -151,8 +161,9 @@ public class SelectionScan {
 		
 		// flush last items after the loop
 		int p_size = B.position();
-		tPayloadsOut = put(p, tPayloadsIn, tPayloadsOut, p_size); //... streaming stores
+		tPayloadsOut = put(j, p, tPayloadsIn, tPayloadsOut, p_size); //... streaming stores
 		
-		return tPayloadsOut.values().toArray(new Row [tPayloadsOut.size()]);
+		//return tPayloadsOut.values().toArray(new Row [tPayloadsOut.size()]);
+		return  tPayloadsOut;
 	}
 }

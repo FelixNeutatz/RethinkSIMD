@@ -3,6 +3,7 @@ package imsem.felix.rethinksimd;
 import imsem.felix.rethinksimd.data.*;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 
@@ -90,6 +91,7 @@ public class Utils {
 		try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
 			try(ObjectOutputStream o = new ObjectOutputStream(b)){
 				o.writeObject(obj);
+				o.flush();
 			}
 			return b.toByteArray();
 		}
@@ -101,5 +103,50 @@ public class Utils {
 				return o.readObject();
 			}
 		}
+	}
+
+	public static ByteBuffer toByte(Row[] table) throws IOException {
+		ByteBuffer buffer = ByteBuffer.allocate(100000);
+		for (int i = 0; i < table.length; i++) {
+			byte [] b = serialize(table[i]);
+			buffer.put(b);
+		}
+		return buffer;
+	}
+	
+	public static void printBuffer(ByteBuffer b, int len) throws IOException, ClassNotFoundException {
+		int row_byte_size = 387;
+		byte [] row = new byte[row_byte_size];
+		int pos = b.position();
+		b.position(0);
+		for (int i = 0; i < len; i++) {
+			try {
+				b.get(row);
+				Row r = (Row) deserialize(row);
+				System.out.println(r);
+			}catch (Exception e) {
+				
+			}
+		}
+		b.position(pos);
+	}
+
+	public static Row[] toRows(ByteBuffer b, int len) {
+		Row [] rows = new Row [len];
+		int row_byte_size = 387;
+		byte [] row = new byte[row_byte_size];
+		int pos = b.position();
+		b.position(0);
+		for (int i = 0; i < len; i++) {
+			try {
+				b.get(row);
+				rows[i] = (Row) deserialize(row);
+			}catch (Exception e) {
+
+			}
+		}
+		b.position(pos);
+		
+		return rows;
 	}
 }
