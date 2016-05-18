@@ -2,9 +2,7 @@ package imsem.felix.rethinksimd;
 
 import imsem.felix.rethinksimd.data.*;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.BitSet;
 
@@ -26,6 +24,10 @@ public class Utils {
 			bitset.set (i, array[i] == 1);
 		}
 		return bitset;
+	}
+
+	public static Row[] loadCSVResource(String filename, String delim) throws IOException {
+		return loadCSV(Utils.class.getClassLoader().getResource(filename).getPath(), delim);
 	}
 	
 	public static Row[] loadCSV(String filename, String delim) throws IOException {
@@ -82,5 +84,22 @@ public class Utils {
 			}
 		}
 		return count;
+	}
+
+	public static byte[] serialize(Object obj) throws IOException {
+		try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
+			try(ObjectOutputStream o = new ObjectOutputStream(b)){
+				o.writeObject(obj);
+			}
+			return b.toByteArray();
+		}
+	}
+
+	public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
+		try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){
+			try(ObjectInputStream o = new ObjectInputStream(b)){
+				return o.readObject();
+			}
+		}
 	}
 }

@@ -9,7 +9,7 @@ import java.io.IOException;
 public class SelectionScanTest {
 	
 	public Row [] initTable() throws IOException {
-		return Utils.loadCSV("/home/felix/RethinkSIMD/implementation/paper/src/test/resources/data/test.tbl", ",");
+		return Utils.loadCSVResource("data/test.tbl", ",");
 	}
 
 	@Test
@@ -24,7 +24,7 @@ public class SelectionScanTest {
 		Row [] result = SelectionScan.selectionScanBranching(tKeysIn, kLower, kUpper, table);
 		Utils.printTable(result);
 
-		Row [] resultTable = Utils.loadCSV("/home/felix/RethinkSIMD/implementation/paper/src/test/resources/data/result1.tbl", ",");
+		Row [] resultTable = Utils.loadCSVResource("data/result1.tbl", ",");
 
 		Assert.assertArrayEquals(resultTable, result);
 	}
@@ -40,7 +40,7 @@ public class SelectionScanTest {
 		Row [] result = SelectionScan.selectionScanBranchless(tKeysIn, kLower, kUpper, table);
 		Utils.printTable(result);
 
-		Row [] resultTable = Utils.loadCSV("/home/felix/RethinkSIMD/implementation/paper/src/test/resources/data/result1.tbl", ",");
+		Row [] resultTable = Utils.loadCSVResource("data/result1.tbl", ",");
 
 		Assert.assertArrayEquals(resultTable, result);
 	}
@@ -56,7 +56,7 @@ public class SelectionScanTest {
 		Row [] result = SelectionScan.selectionScanVector(5, 3, tKeysIn, kLower, kUpper, table);
 		Utils.printTable(result);
 
-		Row [] resultTable = Utils.loadCSV("/home/felix/RethinkSIMD/implementation/paper/src/test/resources/data/result1.tbl", ",");
+		Row [] resultTable = Utils.loadCSVResource("data/result1.tbl", ",");
 
 		Assert.assertArrayEquals(resultTable, result);
 	}
