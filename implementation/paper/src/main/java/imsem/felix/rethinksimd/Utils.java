@@ -5,6 +5,7 @@ import imsem.felix.rethinksimd.data.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -77,6 +78,15 @@ public class Utils {
 		return keysIn;
 	}
 
+	public static double [] generateKeysIn (Row [] table, int keyIndex) {
+		double [] keysIn = new double [table.length] ;
+
+		for (int r = 0; r < table.length; r++) {
+				keysIn [r] = ((DoubleValue)table[r].get(keyIndex)).get();
+		}
+		return keysIn;
+	}
+
 	public static int bitPopulationCount(boolean [] m) {
 		int count = 0;
 		for (int i = 0; i < m.length; i++) {
@@ -106,15 +116,29 @@ public class Utils {
 	}
 
 	public static ByteBuffer toByte(Row[] table) throws IOException {
-		ByteBuffer buffer = ByteBuffer.allocate(100000);
+		int row_byte_size = 387;
+		ByteBuffer buffer = ByteBuffer.allocate(row_byte_size * table.length);
 		for (int i = 0; i < table.length; i++) {
 			byte [] b = serialize(table[i]);
 			buffer.put(b);
 		}
 		return buffer;
 	}
+
+	public static ByteBuffer toByte(Row row) throws IOException {
+		int row_byte_size = 387;
+		ByteBuffer buffer = ByteBuffer.allocate(row_byte_size);
+		byte [] b = serialize(row);
+		buffer.put(b);
+		return buffer;
+	}
 	
 	public static void printBuffer(ByteBuffer b, int len) throws IOException, ClassNotFoundException {
+		System.out.print(bufferToString(b, len));
+	}
+
+	public static String bufferToString(ByteBuffer b, int len) throws IOException, ClassNotFoundException {
+		String s = "";
 		int row_byte_size = 387;
 		byte [] row = new byte[row_byte_size];
 		int pos = b.position();
@@ -123,12 +147,13 @@ public class Utils {
 			try {
 				b.get(row);
 				Row r = (Row) deserialize(row);
-				System.out.println(r);
+				s += r + "\n";
 			}catch (Exception e) {
-				
+				e.printStackTrace();
 			}
 		}
 		b.position(pos);
+		return s;
 	}
 
 	public static Row[] toRows(ByteBuffer b, int len) {
