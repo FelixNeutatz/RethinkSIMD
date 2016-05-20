@@ -78,8 +78,8 @@ public class Utils {
 		return keysIn;
 	}
 
-	public static double [] generateKeysIn (Row [] table, int keyIndex) {
-		double [] keysIn = new double [table.length] ;
+	public static Double [] generateKeysIn (Row [] table, int keyIndex) {
+		Double [] keysIn = new Double [table.length] ;
 
 		for (int r = 0; r < table.length; r++) {
 				keysIn [r] = ((DoubleValue)table[r].get(keyIndex)).get();

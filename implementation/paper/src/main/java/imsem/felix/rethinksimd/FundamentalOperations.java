@@ -1,6 +1,8 @@
 package imsem.felix.rethinksimd;
 
 import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 
@@ -19,6 +21,29 @@ public class FundamentalOperations {
 		}
 		return memory.toArray((T[]) Array.newInstance(type, memory.size()));
 	}
+
+	public static DoubleBuffer selectiveStore(Double[] vector, BitSet mask, DoubleBuffer memory) {
+		for (int i = 0; i < mask.length(); i++) {
+			if (mask.get(i)) {
+				memory.put(vector[i]);
+			}
+		}
+		return memory;
+	}
+
+	public static ByteBuffer selectiveStore(ByteBuffer vector, BitSet mask, ByteBuffer memory) {
+		int row_byte_size = 387;
+		byte [] row = new byte[row_byte_size];
+		
+		for (int i = 0; i < mask.length(); i++) {
+			if (mask.get(i)) {
+				vector.position(0);
+				vector.get(row, row_byte_size * i, row_byte_size);
+				memory.put(row);
+			}
+		}
+		return memory;
+	}
 	
 	
 
@@ -35,19 +60,29 @@ public class FundamentalOperations {
 		return memory;
 	}
 
-	public static <T> T[] selectiveLoad(Class<T> type, T[] vector, T[] memory, BitSet mask) {
-		T [] vectorNew = (T[]) Array.newInstance(type, vector.length);
-		int memory_id = 0;
+	public static <T> T[] selectiveLoad(Class<T> type, T[] vector, T[] memory, int memory_id, BitSet mask) {
 		
 		for (int i = 0; i < mask.length(); i++) {
 			if (mask.get(i)) {
-				vectorNew[i] = memory[memory_id];
+				vector[i] = memory[memory_id];
 				memory_id++;
-			} else {
-				vectorNew[i] = vector[i];
 			}
 		}
-		return vectorNew;
+		return vector;
+	}
+
+	public static ByteBuffer selectiveLoad(ByteBuffer vector, ByteBuffer memory, BitSet mask) {
+		int row_byte_size = 387;
+		byte [] row = new byte[row_byte_size];
+		vector.position(0);
+		
+		for (int i = 0; i < mask.length(); i++) {
+			if (mask.get(i)) {
+				memory.get(row);
+				vector.put(row);
+			}
+		}
+		return vector;
 	}
 
 	public static <T> T[] gather(Class<T> type, int[] indexVector, T[] memory) {

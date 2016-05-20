@@ -31,7 +31,7 @@ public class FundamentalOperationsTest {
 		Character [] memory = {'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 		Character [] vectorNew = {'A', 'R', 'C', 'S', 'E', 'T', 'U', 'H', 'V', 'J', 'W', 'L', 'M', 'X', 'Y', 'Z'};
 
-		Character [] vectorNewResult = FundamentalOperations.selectiveLoad(Character.class, vector, memory, Utils.toBitSet(mask));
+		Character [] vectorNewResult = FundamentalOperations.selectiveLoad(Character.class, vector, memory, 0, Utils.toBitSet(mask));
 
 		System.out.println("new vector: " + Arrays.toString(vectorNewResult));
 
