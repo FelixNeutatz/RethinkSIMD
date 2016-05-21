@@ -124,8 +124,9 @@ public class LinearProbingTest {
 		int W = 2;
 		ByteBuffer foundTuples = LinearProbing.probeVector(W, keys, tableBuffer2, T);
 
+		int row_byte_size = 387;
 		System.out.println("Out:");
-		Utils.printBuffer(foundTuples, 8);
+		Utils.printBuffer(foundTuples, foundTuples.position() / row_byte_size);
 
 		Row [] result = Utils.loadCSVResource("data/result1.tbl", ",");
 		ByteBuffer resultBuffer = Utils.toByte(result);

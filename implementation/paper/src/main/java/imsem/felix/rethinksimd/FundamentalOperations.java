@@ -1,5 +1,6 @@
 package imsem.felix.rethinksimd;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -35,14 +36,23 @@ public class FundamentalOperations {
 	public static ByteBuffer selectiveStore(ByteBuffer vector, BitSet mask, ByteBuffer memory) {
 		int row_byte_size = 387;
 		byte [] row = new byte[row_byte_size];
-		
-	for (int i = 0; i < mask.length(); i++) {
+
+		try {
+			System.out.println("vector: " + Utils.bufferToString(vector, vector.limit() / row_byte_size));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		System.out.println("m: " + Utils.BitSetToString(mask, mask.length()));
+
+		vector.position(0);
+		for (int i = 0; i < mask.length(); i++) {
+			vector.get(row);
 			if (mask.get(i)) {
-				vector.position(0);
-				vector.get(row, row_byte_size * i, row_byte_size);
 				memory.put(row);
 			}
 		}
+
 		return memory;
 	}
 	

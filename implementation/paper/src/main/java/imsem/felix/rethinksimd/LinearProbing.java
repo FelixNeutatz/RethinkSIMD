@@ -229,7 +229,7 @@ public class LinearProbing {
 		return o;
 	}
 
-	public static ByteBuffer probeVector(int W, Double [] sKeys, ByteBuffer sPayloads, HashTable T) {
+	public static ByteBuffer probeVector(int W, Double [] sKeys, ByteBuffer sPayloads, HashTable T) throws IOException, ClassNotFoundException {
 		int row_byte_size = 387;
 		sPayloads.position(0);
 
@@ -256,10 +256,13 @@ public class LinearProbing {
 		RS_keys.position(0);
 
 		BitSet m = new BitSet(W);
-		m.set(0, m.length()); //boolean vector register
+		m.set(0, W); //boolean vector register
 
 		while (i + W <= sKeys.length) { // W : # of vector lanes
 			k = FundamentalOperations.selectiveLoad(Double.class, k, sKeys, i, m);
+
+			System.out.println("k: " + Arrays.toString(k));
+			
 			v = FundamentalOperations.selectiveLoad(v, sPayloads,i, m);
 
 			i = i + m.cardinality();
@@ -268,6 +271,9 @@ public class LinearProbing {
 			h = add(h,o);
 
 			kT = T.getKeys(h); //gather buckets
+
+			System.out.println("kT: " + Arrays.toString(kT));
+			
 			vT = T.getPayloads(h);
 
 			m = compare(kT, k);
@@ -275,6 +281,8 @@ public class LinearProbing {
 			RS_keys = FundamentalOperations.selectiveStore(k, m, RS_keys); //selectively store matching tuples
 			RS_S_payloads = FundamentalOperations.selectiveStore(v, m, RS_S_payloads);
 			RS_R_payloads = FundamentalOperations.selectiveStore(vT, m, RS_R_payloads);
+
+			System.out.println("RS_R_payloads: " + Utils.bufferToString(RS_R_payloads, RS_R_payloads.position() / row_byte_size));
 
 			m = isEmpty(kT); // discard finished tuples
 
