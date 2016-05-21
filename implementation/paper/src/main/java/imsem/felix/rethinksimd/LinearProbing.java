@@ -149,9 +149,9 @@ public class LinearProbing {
 		byte [] v = new byte[row_byte_size];
 		int h;
 
-		ByteBuffer RS_R_payloads = ByteBuffer.allocate(T.size * row_byte_size);
-		ByteBuffer RS_S_payloads = ByteBuffer.allocate(T.size * row_byte_size);
-		DoubleBuffer RS_keys = DoubleBuffer.allocate(T.size);
+		ByteBuffer RS_R_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
+		ByteBuffer RS_S_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
+		DoubleBuffer RS_keys = DoubleBuffer.allocate(T.size * sKeys.length);
 
 		RS_R_payloads.position(0);
 		RS_S_payloads.position(0);
@@ -174,6 +174,10 @@ public class LinearProbing {
 				}
 			}
 		}
+
+		RS_R_payloads.limit(RS_R_payloads.position());
+		RS_S_payloads.limit(RS_S_payloads.position());
+		RS_keys.limit(RS_keys.position());
 
 		return RS_R_payloads;
 	}
@@ -199,6 +203,7 @@ public class LinearProbing {
 	public static BitSet compare(Double [] a, Double [] b) {
 		BitSet m = new BitSet(a.length);
 		for (int i = 0; i < a.length; i++) {
+			System.out.println("m: i: " + i + " -> " + "a: " + a[i] + " b: " + b[i]);
 			m.set(i, (b[i].equals(a[i])));
 			System.out.println("m: i: " + i + " -> " + (b[i].equals(a[i])) + "a: " + a[i] + " b: " + b[i]);
 		}
@@ -224,7 +229,7 @@ public class LinearProbing {
 		return o;
 	}
 
-	public static void probeVector(int W, Double [] sKeys, ByteBuffer sPayloads, HashTable T) {
+	public static ByteBuffer probeVector(int W, Double [] sKeys, ByteBuffer sPayloads, HashTable T) {
 		int row_byte_size = 387;
 		sPayloads.position(0);
 
@@ -242,9 +247,13 @@ public class LinearProbing {
 		Double [] kT = new Double[W];
 		ByteBuffer vT = ByteBuffer.allocate(W * row_byte_size);
 
-		ByteBuffer RS_R_payloads = ByteBuffer.allocate(sKeys.length * row_byte_size);
-		ByteBuffer RS_S_payloads = ByteBuffer.allocate(sKeys.length * row_byte_size);
-		DoubleBuffer RS_keys = DoubleBuffer.allocate(sKeys.length);
+		ByteBuffer RS_R_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
+		ByteBuffer RS_S_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
+		DoubleBuffer RS_keys = DoubleBuffer.allocate(T.size * sKeys.length);
+
+		RS_R_payloads.position(0);
+		RS_S_payloads.position(0);
+		RS_keys.position(0);
 
 		BitSet m = new BitSet(W);
 		m.set(0, m.length()); //boolean vector register
@@ -271,6 +280,12 @@ public class LinearProbing {
 
 			o = incrementOrResetOffsets(o, m); //increment or reset offsets
 		}
+
+		RS_R_payloads.limit(RS_R_payloads.position());
+		RS_S_payloads.limit(RS_S_payloads.position());
+		RS_keys.limit(RS_keys.position());
+
+		return RS_R_payloads;
 	}
 
 	public static HashTable buildScalar(Double [] rKeys, ByteBuffer rPayloads, int hashTableSize) {

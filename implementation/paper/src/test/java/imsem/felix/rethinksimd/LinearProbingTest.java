@@ -94,9 +94,43 @@ public class LinearProbingTest {
 		
 		
 		ByteBuffer foundTuples = LinearProbing.probeScalar(keys, tableBuffer2, T);
+		
+		System.out.println("Out:");
+		Utils.printBuffer(foundTuples, 8);
+
+		Row [] result = Utils.loadCSVResource("data/result1.tbl", ",");
+		ByteBuffer resultBuffer = Utils.toByte(result);
+		
+		Assert.assertEquals(resultBuffer, foundTuples);
+	}
+
+	@Test
+	public void testProbeVector() throws IOException, ClassNotFoundException {
+		Row [] table = initTable();
+		ByteBuffer tableBuffer = Utils.toByte(table);
+		Utils.printTable(table);
+
+
+		Row [] table2 = Utils.loadCSVResource("data/test2.tbl", ",");
+		ByteBuffer tableBuffer2 = Utils.toByte(table2);
+
+		Double [] tKeysIn = Utils.generateKeysIn(table, 0);
+
+		LinearProbing.HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
+		System.out.print(T);
+
+		Double [] keys = {1.0, 2.0};
+
+		int W = 2;
+		ByteBuffer foundTuples = LinearProbing.probeVector(W, keys, tableBuffer2, T);
 
 		System.out.println("Out:");
-		Utils.printBuffer(foundTuples, keys.length);
+		Utils.printBuffer(foundTuples, 8);
+
+		Row [] result = Utils.loadCSVResource("data/result1.tbl", ",");
+		ByteBuffer resultBuffer = Utils.toByte(result);
+
+		Assert.assertEquals(resultBuffer, foundTuples);
 	}
 
 	
