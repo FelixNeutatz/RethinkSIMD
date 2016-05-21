@@ -118,6 +118,7 @@ public class Utils {
 	public static ByteBuffer toByte(Row[] table) throws IOException {
 		int row_byte_size = 387;
 		ByteBuffer buffer = ByteBuffer.allocate(row_byte_size * table.length);
+		buffer.position(0);
 		for (int i = 0; i < table.length; i++) {
 			byte [] b = serialize(table[i]);
 			buffer.put(b);
@@ -153,6 +154,14 @@ public class Utils {
 			}
 		}
 		b.position(pos);
+		return s;
+	}
+	
+	public static String BitSetToString(BitSet m, int W) {
+		String s = "";
+		for (int i = 0; i < W; i++) {
+			s += m.get(i) + ", ";
+		}
 		return s;
 	}
 
