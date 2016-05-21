@@ -31,7 +31,7 @@ public class Utils {
 	public static Row[] loadCSVResource(String filename, String delim) throws IOException {
 		return loadCSV(Utils.class.getClassLoader().getResource(filename).getPath(), delim);
 	}
-	
+
 	public static Row[] loadCSV(String filename, String delim) throws IOException {
 		ArrayList<Row> table = new ArrayList<Row>();
 		BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -45,7 +45,7 @@ public class Utils {
 				row = new ArrayList<Value>();
 				for (int i = 0; i < values.length; i++) {
 					//TODO: This is a hack, use apache function to check whether its numeric
-					try { 
+					try {
 						row.add(new DoubleValue(Double.parseDouble(values[i])));
 					}catch (Exception e) {
 						row.add(new StringValue(values[i]));
@@ -57,19 +57,19 @@ public class Utils {
 		} finally {
 			br.close();
 		}
-		
+
 		return table.toArray(new Row[table.size()]);
 	}
-	
+
 	public static void printTable(Row [] table) {
 		for (int i = 0; i < table.length; i++) {
 			System.out.println(table[i]);
 		}
 	}
-	
+
 	public static double [] [] generateKeysIn (Row [] table, int [] keyIndices) {
 		double [] [] keysIn = new double [table.length] [keyIndices.length];
-		
+
 		for (int r = 0; r < table.length; r++) {
 			for (int k = 0; k < keyIndices.length; k++) {
 				keysIn [r][k] = ((DoubleValue)table[r].get(keyIndices[k])).get();
@@ -82,7 +82,7 @@ public class Utils {
 		Double [] keysIn = new Double [table.length] ;
 
 		for (int r = 0; r < table.length; r++) {
-				keysIn [r] = ((DoubleValue)table[r].get(keyIndex)).get();
+			keysIn [r] = ((DoubleValue)table[r].get(keyIndex)).get();
 		}
 		return keysIn;
 	}
@@ -127,11 +127,10 @@ public class Utils {
 	}
 
 	public static ByteBuffer toByte(Row row) throws IOException {
-		int row_byte_size = 387;
 		byte [] b = serialize(row);
 		return ByteBuffer.wrap(b);
 	}
-	
+
 	public static void printBuffer(ByteBuffer b, int len) throws IOException, ClassNotFoundException {
 		System.out.print(bufferToString(b, len));
 	}
@@ -154,7 +153,7 @@ public class Utils {
 		b.position(pos);
 		return s;
 	}
-	
+
 	public static String BitSetToString(BitSet m, int W) {
 		String s = "";
 		for (int i = 0; i < W; i++) {
@@ -178,7 +177,7 @@ public class Utils {
 			}
 		}
 		b.position(pos);
-		
+
 		return rows;
 	}
 }

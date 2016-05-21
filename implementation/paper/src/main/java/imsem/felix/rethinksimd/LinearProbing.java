@@ -10,11 +10,11 @@ import java.util.*;
  * Created by felix on 17.05.16.
  */
 public class LinearProbing {
-	
+
 	public static class Bucket implements Serializable{
 		double key;
 		ByteBuffer payload;
-		
+
 		public Bucket (double key, ByteBuffer payload) {
 			this.key = key;
 			this.payload = payload;
@@ -28,25 +28,25 @@ public class LinearProbing {
 				return true;
 
 			Bucket b = (Bucket) obj;
-			
+
 			return (this.key == b.key && this.payload.equals(b.payload));
 		}
-		
+
 		@Override
 		public String toString() {
 			String s = "key: " + key + " row: " + payload;
 			return s;
 		}
 	}
-	
+
 	public static class HashTable extends Hashtable<Integer, Bucket>{
 		int size;
-		
+
 		public HashTable(int size) {
 			super();
 			this.size = size;
 		}
-		
+
 		public Double [] getKeys(int [] indices) {
 			Double [] keys = new Double[indices.length];
 			for (int i = 0; i < indices.length; i++) {
@@ -85,8 +85,8 @@ public class LinearProbing {
 			byte [] row = new byte [row_byte_size];
 			payloads.position(0);
 			int limit = payloads.limit();
-			
-			
+
+
 			for (int i = 0; i < indices.length; i++) {
 				if (m.get(i)) {
 					if (keys[i] != null) {
@@ -103,11 +103,11 @@ public class LinearProbing {
 			payloads.limit(limit);
 		}
 
-		
+
 		public ByteBuffer getPayloads(int [] indices) {
 			int row_byte_size = 387;
 			byte [] row = new byte [387];
-				
+
 			ByteBuffer payloads = ByteBuffer.allocate(indices.length * row_byte_size);
 			payloads.position(0);
 			for (int i = 0; i < indices.length; i++) {
@@ -133,25 +133,30 @@ public class LinearProbing {
 					}
 				} catch (Exception e1) {
 					e1.printStackTrace();
-				} 
+				}
 			}
 			return s;
 		}
 	}
 
-	public static void probeScalar(double [] sKeys, ByteBuffer sPayloads, HashTable T) {
+	public static ByteBuffer probeScalar(Double [] sKeys, ByteBuffer sPayloads, HashTable T) {
 		int row_byte_size = 387;
 		sPayloads.position(0);
-		
+
 		int j = 0;
-		
-		double k;
+
+		Double k;
 		byte [] v = new byte[row_byte_size];
 		int h;
 
-		ByteBuffer RS_R_payloads = ByteBuffer.allocate(sKeys.length);
-		ByteBuffer RS_S_payloads = ByteBuffer.allocate(sKeys.length);
-		DoubleBuffer RS_keys = DoubleBuffer.allocate(sKeys.length);
+		ByteBuffer RS_R_payloads = ByteBuffer.allocate(T.size * row_byte_size);
+		ByteBuffer RS_S_payloads = ByteBuffer.allocate(T.size * row_byte_size);
+		DoubleBuffer RS_keys = DoubleBuffer.allocate(T.size);
+
+		RS_R_payloads.position(0);
+		RS_S_payloads.position(0);
+		RS_keys.position(0);
+
 
 		for (int i = 0; i < sKeys.length; i++) { // outer (probing) relation
 			k = sKeys[i];
@@ -159,18 +164,20 @@ public class LinearProbing {
 			h = Double.hashCode(k) % T.size;
 			while (T.containsKey(h)) { //until empty bucket
 				if (k == T.get(h).key) {
-					RS_R_payloads.put(T.get(h).payload.array()); //inner payloads
+					RS_R_payloads.put(T.get(h).payload); //inner payloads
 					RS_S_payloads.put(v); // outer payloads
 					RS_keys.put(k); // join keys
 				}
 				h = h + 1; // next bucket
 				if (h == T.size) { // reset if last bucket
-					h = 0; 
+					h = 0;
 				}
 			}
 		}
+
+		return RS_R_payloads;
 	}
-	
+
 	public static int [] hashVector(Double [] k, int hashTableSize) {
 		int [] h = new int [k.length];
 		for (int i = 0; i < k.length; i++) {
@@ -180,7 +187,7 @@ public class LinearProbing {
 		}
 		return h;
 	}
-	
+
 	public static int [] add (int [] a, int [] b) {
 		int [] sum = new int[a.length];
 		for (int i = 0; i < a.length; i++) {
@@ -188,7 +195,7 @@ public class LinearProbing {
 		}
 		return sum;
 	}
-	
+
 	public static BitSet compare(Double [] a, Double [] b) {
 		BitSet m = new BitSet(a.length);
 		for (int i = 0; i < a.length; i++) {
@@ -231,7 +238,7 @@ public class LinearProbing {
 		ByteBuffer v = ByteBuffer.allocate(row_byte_size * W);
 		v.position(0);
 		int [] h;
-		
+
 		Double [] kT = new Double[W];
 		ByteBuffer vT = ByteBuffer.allocate(W * row_byte_size);
 
@@ -247,13 +254,13 @@ public class LinearProbing {
 			v = FundamentalOperations.selectiveLoad(v, sPayloads,i, m);
 
 			i = i + m.cardinality();
-			
+
 			h = hashVector(k, T.size);
 			h = add(h,o);
-			
+
 			kT = T.getKeys(h); //gather buckets
 			vT = T.getPayloads(h);
-			
+
 			m = compare(kT, k);
 
 			RS_keys = FundamentalOperations.selectiveStore(k, m, RS_keys); //selectively store matching tuples
@@ -261,7 +268,7 @@ public class LinearProbing {
 			RS_R_payloads = FundamentalOperations.selectiveStore(vT, m, RS_R_payloads);
 
 			m = isEmpty(kT); // discard finished tuples
-			
+
 			o = incrementOrResetOffsets(o, m); //increment or reset offsets
 		}
 	}
@@ -270,7 +277,7 @@ public class LinearProbing {
 		HashTable T = new HashTable(hashTableSize);
 		return buildScalar(rKeys, rPayloads, T);
 	}
-	
+
 	public static HashTable buildScalar(Double [] rKeys, ByteBuffer rPayloads, HashTable T ) {
 		double k;
 		int h;
@@ -284,7 +291,7 @@ public class LinearProbing {
 
 		int row_byte_size = 387;
 		byte [] row = new byte[row_byte_size];
-		
+
 		for (int i = 0; i < rKeys.length; i++) {
 			k = rKeys[i];
 			h = Double.hashCode(k) % T.size;
@@ -295,9 +302,9 @@ public class LinearProbing {
 				}
 			}
 			rPayloads.get(row);
-			T.put(h, new Bucket(k, ByteBuffer.wrap(row))); // set empty bucket
+			T.put(h, new Bucket(k, ByteBuffer.wrap(row.clone()))); // set empty bucket
 		}
-		
+
 		return  T;
 	}
 
@@ -306,7 +313,7 @@ public class LinearProbing {
 		rPayloads.position(0);
 
 		System.out.println("Table: " + Arrays.toString(rPayloads.array()));
-		
+
 		Double [] l = new Double[W];//any vector with unique values per lane
 		for (int t = 0; t < W; t++) {
 			l[t] = (double) t;
@@ -320,7 +327,7 @@ public class LinearProbing {
 
 		BitSet m = new BitSet(W);
 		m.set(0, W); //boolean vector register
-		
+
 		int i = 0;
 
 		ByteBuffer v = ByteBuffer.allocate(row_byte_size * W);
@@ -330,19 +337,19 @@ public class LinearProbing {
 		int [] h;
 
 		Double [] kT = new Double[W];
-		
+
 		HashTable T = new HashTable(hashTableSize);
 
 		while (i + W <= rKeys.length) { // W : # of vector lanes
 			System.out.println("m: " + Utils.BitSetToString(m, W));
-			
+
 			k = FundamentalOperations.selectiveLoad(Double.class, k, rKeys, i, m);
 			System.out.println("k: " + Arrays.toString(k));
 			v.position(0);
 			rPayloads.position(0);
-			
+
 			System.out.println("i: " + i);
-			
+
 			v = FundamentalOperations.selectiveLoad(v, rPayloads, i, m);
 
 			System.out.println("i: " + i);
@@ -364,7 +371,7 @@ public class LinearProbing {
 			m = isEmpty(kT); // find empty buckets
 
 			System.out.println("m: " + Utils.BitSetToString(m, W));
-			
+
 			//find detect conflicts -> find keys with the same hash value within the vector
 			T.put(h, l, m);
 			l_back = T.getKeys(h, m);
@@ -373,13 +380,13 @@ public class LinearProbing {
 			System.out.println("l: " + Arrays.toString(l));
 
 			System.out.println("m: " + Utils.BitSetToString(m, W));
-			
+
 			m.and(compare(l_back, l));
 
 			System.out.println("com: " + Utils.BitSetToString(compare(l_back, l), W));
 
 			System.out.println("m: " + Utils.BitSetToString(m, W));
-			
+
 			T.put(h, k, v, m); //scatter to buckets
 
 			System.out.println("HashTable: " + T);
@@ -389,16 +396,16 @@ public class LinearProbing {
 		int rest = rKeys.length - i + 1;
 		Double [] keys = new Double[rest];
 		rPayloads.position((i - 1) * row_byte_size);
-		
-		
+
+
 		for (int t = 0; t < rest; t++) {
 			keys[t] = rKeys[i + t - 1];
 		}
 
 		System.out.println("keys: " + Arrays.toString(keys));
-		
+
 		System.out.println("rows: " + rPayloads.slice().remaining());
-		
+
 		T = buildScalar(keys, rPayloads.slice(), T);
 		return T;
 	}

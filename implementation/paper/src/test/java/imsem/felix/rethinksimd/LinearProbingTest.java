@@ -1,6 +1,7 @@
 package imsem.felix.rethinksimd;
 
 import imsem.felix.rethinksimd.data.Row;
+import imsem.felix.rethinksimd.data.Value;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,6 +9,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
@@ -71,6 +73,30 @@ public class LinearProbingTest {
 		LinearProbing.HashTable t_should = resultingHashTable(table, tKeysIn);
 
 		Assert.assertEquals(t_should, T);
+	}
+
+	@Test
+	public void testProbeScalar() throws IOException, ClassNotFoundException {
+		Row [] table = initTable();
+		ByteBuffer tableBuffer = Utils.toByte(table);
+		Utils.printTable(table);
+
+
+		Row [] table2 = Utils.loadCSVResource("data/test2.tbl", ",");
+		ByteBuffer tableBuffer2 = Utils.toByte(table2);
+
+		Double [] tKeysIn = Utils.generateKeysIn(table, 0);
+
+		LinearProbing.HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
+		System.out.print(T);
+
+		Double [] keys = {1.0, 2.0};
+		
+		
+		ByteBuffer foundTuples = LinearProbing.probeScalar(keys, tableBuffer2, T);
+
+		System.out.println("Out:");
+		Utils.printBuffer(foundTuples, keys.length);
 	}
 
 	
