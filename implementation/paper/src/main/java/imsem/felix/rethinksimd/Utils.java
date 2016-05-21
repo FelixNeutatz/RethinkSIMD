@@ -128,10 +128,8 @@ public class Utils {
 
 	public static ByteBuffer toByte(Row row) throws IOException {
 		int row_byte_size = 387;
-		ByteBuffer buffer = ByteBuffer.allocate(row_byte_size);
 		byte [] b = serialize(row);
-		buffer.put(b);
-		return buffer;
+		return ByteBuffer.wrap(b);
 	}
 	
 	public static void printBuffer(ByteBuffer b, int len) throws IOException, ClassNotFoundException {

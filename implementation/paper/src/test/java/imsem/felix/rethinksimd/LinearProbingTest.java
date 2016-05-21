@@ -1,12 +1,16 @@
 package imsem.felix.rethinksimd;
 
 import imsem.felix.rethinksimd.data.Row;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
+import java.util.Map;
+
+import static org.junit.Assert.assertTrue;
 
 public class LinearProbingTest {
 	

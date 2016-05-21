@@ -31,6 +31,12 @@ public class LinearProbing {
 			
 			return (this.key == b.key && this.payload.equals(b.payload));
 		}
+		
+		@Override
+		public String toString() {
+			String s = "key: " + key + " row: " + payload;
+			return s;
+		}
 	}
 	
 	public static class HashTable extends Hashtable<Integer, Bucket>{
@@ -259,13 +265,22 @@ public class LinearProbing {
 			o = incrementOrResetOffsets(o, m); //increment or reset offsets
 		}
 	}
-	
+
 	public static HashTable buildScalar(Double [] rKeys, ByteBuffer rPayloads, int hashTableSize) {
+		HashTable T = new HashTable(hashTableSize);
+		return buildScalar(rKeys, rPayloads, T);
+	}
+	
+	public static HashTable buildScalar(Double [] rKeys, ByteBuffer rPayloads, HashTable T ) {
 		double k;
 		int h;
 		rPayloads.position(0);
 
-		HashTable T = new HashTable(hashTableSize);
+		try {
+			Utils.printBuffer(rPayloads, rKeys.length);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		int row_byte_size = 387;
 		byte [] row = new byte[row_byte_size];
@@ -280,7 +295,7 @@ public class LinearProbing {
 				}
 			}
 			rPayloads.get(row);
-			T.put(h, new Bucket(k, ByteBuffer.allocate(row_byte_size).put(row))); // set empty bucket
+			T.put(h, new Bucket(k, ByteBuffer.wrap(row))); // set empty bucket
 		}
 		
 		return  T;
@@ -371,6 +386,20 @@ public class LinearProbing {
 
 			o = incrementOrResetOffsets(o, m); //increment or reset offsets
 		}
+		int rest = rKeys.length - i + 1;
+		Double [] keys = new Double[rest];
+		rPayloads.position((i - 1) * row_byte_size);
+		
+		
+		for (int t = 0; t < rest; t++) {
+			keys[t] = rKeys[i + t - 1];
+		}
+
+		System.out.println("keys: " + Arrays.toString(keys));
+		
+		System.out.println("rows: " + rPayloads.slice().remaining());
+		
+		T = buildScalar(keys, rPayloads.slice(), T);
 		return T;
 	}
 }
