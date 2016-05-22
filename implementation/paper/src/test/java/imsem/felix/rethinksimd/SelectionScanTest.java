@@ -1,6 +1,7 @@
 package imsem.felix.rethinksimd;
 
 import imsem.felix.rethinksimd.data.*;
+import imsem.felix.rethinksimd.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 

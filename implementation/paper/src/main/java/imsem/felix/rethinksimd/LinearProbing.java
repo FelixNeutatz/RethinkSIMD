@@ -1,143 +1,19 @@
 package imsem.felix.rethinksimd;
 
+import imsem.felix.rethinksimd.data.hash.Bucket;
+import imsem.felix.rethinksimd.data.hash.HashTable;
+import imsem.felix.rethinksimd.util.Utils;
+
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.util.*;
 
+import static imsem.felix.rethinksimd.util.HashUtils.*;
 /**
  * Created by felix on 17.05.16.
  */
 public class LinearProbing {
-
-	public static class Bucket implements Serializable{
-		double key;
-		ByteBuffer payload;
-
-		public Bucket (double key, ByteBuffer payload) {
-			this.key = key;
-			this.payload = payload;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof Bucket))
-				return false;
-			if (obj == this)
-				return true;
-
-			Bucket b = (Bucket) obj;
-
-			return (this.key == b.key && this.payload.equals(b.payload));
-		}
-
-		@Override
-		public String toString() {
-			String s = "key: " + key + " row: " + payload;
-			return s;
-		}
-	}
-
-	public static class HashTable extends Hashtable<Integer, Bucket>{
-		int size;
-
-		public HashTable(int size) {
-			super();
-			this.size = size;
-		}
-
-		public Double [] getKeys(int [] indices) {
-			Double [] keys = new Double[indices.length];
-			for (int i = 0; i < indices.length; i++) {
-				Bucket b = this.get(indices[i]);
-				if (b != null) {
-					keys[i] = b.key;
-				} else {
-					keys[i] = null;
-				}
-			}
-			return keys;
-		}
-
-		public Double [] getKeys(int [] indices, BitSet m) {
-			Double [] keys = new Double[indices.length];
-			for (int i = 0; i < indices.length; i++) {
-				Bucket b = this.get(indices[i]);
-				if (m.get(i)) {
-					keys[i] = b.key;
-				}
-			}
-			return keys;
-		}
-
-		public void put(int [] indices, Double [] keys, BitSet m) {
-			for (int i = 0; i < indices.length; i++) {
-				if (m.get(i)) {
-					System.out.println("h: " + indices[i] + " -> " + keys[i]);
-					this.put(indices[i], new Bucket(keys[i], null));
-				}
-			}
-		}
-
-		public void put(int [] indices, Double [] keys, ByteBuffer payloads, BitSet m) {
-			int row_byte_size = 387;
-			byte [] row = new byte [row_byte_size];
-			payloads.position(0);
-			int limit = payloads.limit();
-
-
-			for (int i = 0; i < indices.length; i++) {
-				if (m.get(i)) {
-					if (keys[i] != null) {
-
-						payloads.position(i * row_byte_size);
-						payloads.limit((i+1) * row_byte_size);
-						payloads.get(row);
-
-						//this.put(indices[i], new Bucket(keys[i], payloads.slice()));
-						this.put(indices[i], new Bucket(keys[i], ByteBuffer.wrap(row.clone())));
-					}
-				}
-			}
-			payloads.limit(limit);
-		}
-
-
-		public ByteBuffer getPayloads(int [] indices) {
-			int row_byte_size = 387;
-			byte [] row = new byte [387];
-
-			ByteBuffer payloads = ByteBuffer.allocate(indices.length * row_byte_size);
-			payloads.position(0);
-			for (int i = 0; i < indices.length; i++) {
-				Bucket b = this.get(indices[i]);
-				if (b != null) {
-					payloads.put(b.payload);
-				} else {
-					payloads.put(row); //insert empty row
-				}
-			}
-			return payloads;
-		}
-
-		@Override
-		public String toString() {
-			String s = "";
-			for (Map.Entry<Integer,Bucket> e: this.entrySet()) {
-				try {
-					if (e.getValue() != null) {
-						s += "bucket_ID: " + e.getKey() + " key: " + e.getValue().key + " row: " + Utils.bufferToString(e.getValue().payload, 1);
-					} else {
-						s += "bucket_ID: " + e.getKey() + "-> null";
-					}
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-			}
-			return s;
-		}
-	}
 
 	public static ByteBuffer probeScalar(Double [] sKeys, ByteBuffer sPayloads, HashTable T) {
 		int row_byte_size = 387;
@@ -149,9 +25,9 @@ public class LinearProbing {
 		byte [] v = new byte[row_byte_size];
 		int h;
 
-		ByteBuffer RS_R_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
-		ByteBuffer RS_S_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
-		DoubleBuffer RS_keys = DoubleBuffer.allocate(T.size * sKeys.length);
+		ByteBuffer RS_R_payloads = ByteBuffer.allocate(sKeys.length * row_byte_size);
+		ByteBuffer RS_S_payloads = ByteBuffer.allocate(sKeys.length * row_byte_size);
+		DoubleBuffer RS_keys = DoubleBuffer.allocate(sKeys.length);
 
 		RS_R_payloads.position(0);
 		RS_S_payloads.position(0);
@@ -182,53 +58,6 @@ public class LinearProbing {
 		return RS_R_payloads;
 	}
 
-	public static int [] hashVector(Double [] k, int hashTableSize) {
-		int [] h = new int [k.length];
-		for (int i = 0; i < k.length; i++) {
-			if (k[i] != null) {
-				h[i] = Double.hashCode(k[i]) % hashTableSize;
-			}
-		}
-		return h;
-	}
-
-	public static int [] add (int [] a, int [] b) {
-		int [] sum = new int[a.length];
-		for (int i = 0; i < a.length; i++) {
-			sum[i] = a[i] + b[i];
-		}
-		return sum;
-	}
-
-	public static BitSet compare(Double [] a, Double [] b) {
-		BitSet m = new BitSet(a.length);
-		for (int i = 0; i < a.length; i++) {
-			System.out.println("m: i: " + i + " -> " + "a: " + a[i] + " b: " + b[i]);
-			m.set(i, (b[i].equals(a[i])));
-			System.out.println("m: i: " + i + " -> " + (b[i].equals(a[i])) + "a: " + a[i] + " b: " + b[i]);
-		}
-		return m;
-	}
-
-	public static BitSet isEmpty(Double [] a) {
-		BitSet m = new BitSet(a.length);
-		for (int i = 0; i < a.length; i++) {
-			m.set(i, (a[i] == null));
-		}
-		return m;
-	}
-
-	public static int [] incrementOrResetOffsets(int [] o, BitSet m) {
-		for (int i = 0; i < o.length; i++) {
-			if (m.get(i)) {
-				o[i] = 0;		 //reset offset
-			} else {
-				o[i] = o[i] + 1; //increment offset
-			}
-		}
-		return o;
-	}
-
 	public static ByteBuffer probeVector(int W, Double [] sKeys, ByteBuffer sPayloads, HashTable T) throws IOException, ClassNotFoundException {
 		int row_byte_size = 387;
 		sPayloads.position(0);
@@ -247,9 +76,9 @@ public class LinearProbing {
 		Double [] kT = new Double[W];
 		ByteBuffer vT = ByteBuffer.allocate(W * row_byte_size);
 
-		ByteBuffer RS_R_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
-		ByteBuffer RS_S_payloads = ByteBuffer.allocate(T.size * sKeys.length * row_byte_size);
-		DoubleBuffer RS_keys = DoubleBuffer.allocate(T.size * sKeys.length);
+		ByteBuffer RS_R_payloads = ByteBuffer.allocate(sKeys.length * row_byte_size);
+		ByteBuffer RS_S_payloads = ByteBuffer.allocate(sKeys.length * row_byte_size);
+		DoubleBuffer RS_keys = DoubleBuffer.allocate(sKeys.length);
 
 		RS_R_payloads.position(0);
 		RS_S_payloads.position(0);

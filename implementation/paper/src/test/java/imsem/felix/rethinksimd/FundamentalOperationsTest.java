@@ -1,8 +1,8 @@
 package imsem.felix.rethinksimd;
 
+import imsem.felix.rethinksimd.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
-import imsem.felix.rethinksimd.FundamentalOperations;
 
 import java.util.Arrays;
 

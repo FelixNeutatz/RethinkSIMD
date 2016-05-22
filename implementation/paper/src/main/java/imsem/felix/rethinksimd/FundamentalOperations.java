@@ -1,6 +1,7 @@
 package imsem.felix.rethinksimd;
 
-import java.io.IOException;
+import imsem.felix.rethinksimd.util.Utils;
+
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;

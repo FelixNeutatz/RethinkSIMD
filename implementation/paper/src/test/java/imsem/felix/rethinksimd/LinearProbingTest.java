@@ -1,18 +1,14 @@
 package imsem.felix.rethinksimd;
 
 import imsem.felix.rethinksimd.data.Row;
-import imsem.felix.rethinksimd.data.Value;
-import org.apache.commons.collections.CollectionUtils;
+import imsem.felix.rethinksimd.data.hash.Bucket;
+import imsem.felix.rethinksimd.data.hash.HashTable;
+import imsem.felix.rethinksimd.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertTrue;
 
 public class LinearProbingTest {
 	
@@ -20,22 +16,22 @@ public class LinearProbingTest {
 		return Utils.loadCSVResource("data/test3.tbl", ",");
 	}
 	
-	public static LinearProbing.HashTable resultingHashTable(Row [] table, Double [] tKeysIn) throws IOException {
-		LinearProbing.HashTable t_should = new LinearProbing.HashTable(100);
-		t_should.put(48, new LinearProbing.Bucket(tKeysIn[0],Utils.toByte(table[0])));
-		t_should.put(24, new LinearProbing.Bucket(tKeysIn[1],Utils.toByte(table[1])));
-		t_should.put(12, new LinearProbing.Bucket(tKeysIn[2],Utils.toByte(table[2])));
-		t_should.put(0, new LinearProbing.Bucket(tKeysIn[3],Utils.toByte(table[3])));
+	public static HashTable resultingHashTable(Row [] table, Double [] tKeysIn) throws IOException {
+		HashTable t_should = new HashTable(100);
+		t_should.put(48, new Bucket(tKeysIn[0],Utils.toByte(table[0])));
+		t_should.put(24, new Bucket(tKeysIn[1],Utils.toByte(table[1])));
+		t_should.put(12, new Bucket(tKeysIn[2],Utils.toByte(table[2])));
+		t_should.put(0, new Bucket(tKeysIn[3],Utils.toByte(table[3])));
 
-		t_should.put(44, new LinearProbing.Bucket(tKeysIn[4],Utils.toByte(table[4])));
-		t_should.put(88, new LinearProbing.Bucket(tKeysIn[5],Utils.toByte(table[5])));
-		t_should.put(32, new LinearProbing.Bucket(tKeysIn[6],Utils.toByte(table[6])));
-		t_should.put(76, new LinearProbing.Bucket(tKeysIn[7],Utils.toByte(table[7])));
+		t_should.put(44, new Bucket(tKeysIn[4],Utils.toByte(table[4])));
+		t_should.put(88, new Bucket(tKeysIn[5],Utils.toByte(table[5])));
+		t_should.put(32, new Bucket(tKeysIn[6],Utils.toByte(table[6])));
+		t_should.put(76, new Bucket(tKeysIn[7],Utils.toByte(table[7])));
 
-		t_should.put(49, new LinearProbing.Bucket(tKeysIn[8],Utils.toByte(table[8])));
-		t_should.put(20, new LinearProbing.Bucket(tKeysIn[9],Utils.toByte(table[9])));
-		t_should.put(92, new LinearProbing.Bucket(tKeysIn[10],Utils.toByte(table[10])));
-		t_should.put(64, new LinearProbing.Bucket(tKeysIn[11],Utils.toByte(table[11])));
+		t_should.put(49, new Bucket(tKeysIn[8],Utils.toByte(table[8])));
+		t_should.put(20, new Bucket(tKeysIn[9],Utils.toByte(table[9])));
+		t_should.put(92, new Bucket(tKeysIn[10],Utils.toByte(table[10])));
+		t_should.put(64, new Bucket(tKeysIn[11],Utils.toByte(table[11])));
 		
 		return t_should;
 	}
@@ -49,10 +45,10 @@ public class LinearProbingTest {
 		
 		Double [] tKeysIn = Utils.generateKeysIn(table, 0);
 		
-		LinearProbing.HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
+		HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
 		System.out.print(T);
 
-		LinearProbing.HashTable t_should = resultingHashTable(table, tKeysIn);
+		HashTable t_should = resultingHashTable(table, tKeysIn);
 
 		Assert.assertEquals(t_should, T);
 	}
@@ -67,10 +63,10 @@ public class LinearProbingTest {
 		Double [] tKeysIn = Utils.generateKeysIn(table, 0);
 
 		int W = 2;
-		LinearProbing.HashTable T = LinearProbing.buildVector(W, tKeysIn, tableBuffer, 100);
+		HashTable T = LinearProbing.buildVector(W, tKeysIn, tableBuffer, 100);
 		System.out.print(T);
 
-		LinearProbing.HashTable t_should = resultingHashTable(table, tKeysIn);
+		HashTable t_should = resultingHashTable(table, tKeysIn);
 
 		Assert.assertEquals(t_should, T);
 	}
@@ -87,7 +83,7 @@ public class LinearProbingTest {
 
 		Double [] tKeysIn = Utils.generateKeysIn(table, 0);
 
-		LinearProbing.HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
+		HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
 		System.out.print(T);
 
 		Double [] keys = {1.0, 2.0};
@@ -117,7 +113,7 @@ public class LinearProbingTest {
 
 		Double [] tKeysIn = Utils.generateKeysIn(table, 0);
 
-		LinearProbing.HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
+		HashTable T = LinearProbing.buildScalar(tKeysIn, tableBuffer, 100);
 		System.out.print(T);
 
 		Double [] keys = {1.0, 2.0};

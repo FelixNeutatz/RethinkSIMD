@@ -1,11 +1,10 @@
-package imsem.felix.rethinksimd;
+package imsem.felix.rethinksimd.util;
 
 import imsem.felix.rethinksimd.data.*;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 
 /**
