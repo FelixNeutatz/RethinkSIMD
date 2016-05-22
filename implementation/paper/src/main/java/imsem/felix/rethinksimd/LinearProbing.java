@@ -96,7 +96,7 @@ public class LinearProbing {
 						payloads.get(row);
 
 						//this.put(indices[i], new Bucket(keys[i], payloads.slice()));
-						this.put(indices[i], new Bucket(keys[i], ByteBuffer.wrap(row)));
+						this.put(indices[i], new Bucket(keys[i], ByteBuffer.wrap(row.clone())));
 					}
 				}
 			}
@@ -416,13 +416,13 @@ public class LinearProbing {
 
 			o = incrementOrResetOffsets(o, m); //increment or reset offsets
 		}
-		int rest = rKeys.length - i + 1;
+		int rest = rKeys.length - i;
 		Double [] keys = new Double[rest];
-		rPayloads.position((i - 1) * row_byte_size);
+		rPayloads.position((i) * row_byte_size);
 
 
 		for (int t = 0; t < rest; t++) {
-			keys[t] = rKeys[i + t - 1];
+			keys[t] = rKeys[i + t];
 		}
 
 		System.out.println("keys: " + Arrays.toString(keys));
